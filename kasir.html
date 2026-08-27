@@ -82,6 +82,15 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+    const pinRahasia = "09876"; // Ganti dengan PIN kasir Anda
+    const inputPin = prompt("Masukkan PIN Kasir untuk mengakses halaman ini:");
+
+    if (inputPin !== pinRahasia) {
+        alert("PIN salah! Anda akan dikembalikan ke halaman utama.");
+        window.location.href = "index.html"; // Lempar balik pelanggan ke index.html
+    }
+});
+        document.addEventListener('DOMContentLoaded', () => {
             const orderListContainer = document.getElementById('orderListContainer');
             const totalOrderBadge = document.getElementById('totalOrderBadge');
             const clearAllBtn = document.getElementById('clearAllBtn');
