@@ -8,6 +8,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 </head>
 <style>
     body{
@@ -439,6 +441,20 @@
 
     <!-- SCRIPT JAVASCRIPT SISTEM PEMESANAN PELANGGAN -->
     <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCftURd2SMm6QMdegu-yL35twa4n-97xr8",
+            authDomain: "moodboard-cafe.firebaseapp.com",
+            databaseURL: "https://moodboard-cafe-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "moodboard-cafe",
+            storageBucket: "moodboard-cafe.firebasestorage.app",
+            messagingSenderId: "111496652935",
+            appId: "1:111496652935:web:51b411235bc1624ebcf022",
+            measurementId: "G-ENYMZFSZGM"
+        };
+
+        // Inisialisasi Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
         let cart = [];
 
         document.addEventListener('DOMContentLoaded', () => {
