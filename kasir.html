@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Pelayan & Kasir - Moodboard Cafe</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .navbar-brand {
+            color: #7e210c !important;
+        }
+        .order-card {
+            border-left: 5px solid #7e210c;
+        }
+        .bg-custom-header {
+            background-color: #7e210c;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-white shadow-sm mb-4">
+        <div class="container">
+            <a class="navbar-brand fw-bold fs-4 d-flex align-items-center" href="#">
+                <i class="bi bi-cup-hot-fill me-2" style="color: #7e210c;"></i> Moodboard Cafe - Panel Pelayan & Kasir
+            </a>
+            <button class="btn btn-outline-danger btn-sm" id="clearAllBtn">
+                <i class="bi bi-trash"></i> Hapus Semua Riwayat
+            </button>
+        </div>
+    </nav>
+
+    <div class="container mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3 class="fw-bold" style="color: #7e210c;">Daftar Pesanan Masuk</h3>
+            <span class="badge bg-secondary" id="totalOrderBadge">0 Pesanan</span>
+        </div>
+
+        <!-- Wadah List Pesanan -->
+        <div class="row g-4" id="orderListContainer">
+            <!-- Data Pesanan Tampil Di Sini -->
+        </div>
+    </div>
+
+    <!-- Modal Konfirmasi Pembayaran & Pilih Metode -->
+    <div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 p-2">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold" id="paymentModalLabel" style="color: #7e210c;">
+                        <i class="bi bi-credit-card me-2"></i>Konfirmasi Pembayaran
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-3 text-secondary">Pilih metode pembayaran yang digunakan oleh pelanggan:</p>
+                    
+                    <div class="mb-3">
+                        <label for="paymentMethodSelect" class="form-label fw-semibold">Metode Pembayaran</label>
+                        <select class="form-select form-select-lg" id="paymentMethodSelect">
+                            <option value="Tunai">💵 Tunai</option>
+                            <option value="QRIS">📲 QRIS</option>
+                            <option value="Transfer">🏦 Transfer Bank</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-success rounded-pill px-4" id="confirmPaymentBtn">
+                        <i class="bi bi-check-circle me-1"></i> Konfirmasi Pembayaran
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const orderListContainer = document.getElementById('orderListContainer');
+            const totalOrderBadge = document.getElementById('totalOrderBadge');
+            const clearAllBtn = document.getElementById('clearAllBtn');
+            const paymentModal = new bootstrap.Modal(document.getElementById('paymentModal'));
+            const confirmPaymentBtn = document.getElementById('confirmPaymentBtn');
+            const paymentMethodSelect = document.getElementById('paymentMethodSelect');
+
+            let selectedOrderIndex = null;
+
+            function loadOrders() {
+                const orders = JSON.parse(localStorage.getItem('cafe_orders')) || [];
+                totalOrderBadge.textContent = `${orders.length} Pesanan`;
+                orderListContainer.innerHTML = '';
+
+                if (orders.length === 0) {
+                    orderListContainer.innerHTML = `
+                        <div class="col-12 text-center py-5 text-muted">
+                            <i class="bi bi-inbox fs-1"></i>
+                            <p class="mt-2">Belum ada pesanan masuk.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                orders.reverse().forEach((order, index) => {
+                    const realIndex = orders.length - 1 - index;
+                    
+                    let itemsHtml = '';
+                    order.items.forEach(item => {
+                        itemsHtml += `
+                            <li class="d-flex justify-content-between text-secondary small py-1 border-bottom">
+                                <span>${item.name} <strong>x${item.qty}</strong></span>
+                                <span>Rp ${(item.price * item.qty).toLocaleString('id-ID')}</span>
+                            </li>
+                        `;
+                    });
+
+                    const isDineIn = order.orderType === 'Dine-in' || order.orderType === 'Makan di Tempat';
+                    const orderTypeLabel = isDineIn ? 'Makan di Tempat' : 'Bawa Pulang';
+                    const badgeType = isDineIn ? 'bg-primary' : 'bg-warning text-dark';
+                    const statusBadge = order.status === 'Selesai' ? 'bg-success' : 'bg-danger';
+                    const paymentInfo = order.paymentMethod ? `<small class="text-muted d-block mt-1">Pembayaran: <strong>${order.paymentMethod}</strong></small>` : '';
+
+                    const col = document.createElement('div');
+                    col.className = 'col-md-6 col-lg-4';
+                    col.innerHTML = `
+                        <div class="card shadow-sm rounded-4 border-0 order-card">
+                            <div class="card-header bg-white d-flex justify-content-between align-items-center pt-3 border-0">
+                                <div>
+                                    <small class="text-muted d-block">${order.time || ''}</small>
+                                </div>
+                                <div>
+                                    <span class="badge ${badgeType}">${orderTypeLabel}</span>
+                                    <span class="badge ${statusBadge}">${order.status}</span>
+                                </div>
+                            </div>
+                            <div class="card-body pt-1">
+                                <div class="mb-2">
+                                    <strong>Pemesan:</strong> ${order.customerName} <br>
+                                    ${isDineIn ? `<strong>No. Meja:</strong> <span class="fs-5 fw-bold text-danger">${order.tableNumber}</span>` : '<em>(Bawa Pulang)</em>'}
+                                    ${paymentInfo}
+                                </div>
+
+                                <div class="bg-light p-2 rounded-3 mb-3">
+                                    <div class="fw-semibold small mb-1">Rincian Menu:</div>
+                                    <ul class="list-unstyled mb-0">
+                                        ${itemsHtml}
+                                    </ul>
+                                </div>
+
+                                <div class="d-flex justify-content-between align-items-center fw-bold fs-6 mb-3">
+                                    <span>Total:</span>
+                                    <span style="color: #7e210c;">Rp ${order.totalAmount.toLocaleString('id-ID')}</span>
+                                </div>
+
+                                <div class="d-flex gap-2">
+                                    ${order.status !== 'Selesai' ? 
+                                        `<button class="btn btn-success btn-sm w-100 rounded-pill btn-complete" data-index="${realIndex}">
+                                            <i class="bi bi-check-circle me-1"></i> Tandai Selesai
+                                         </button>` : 
+                                        `<button class="btn btn-secondary btn-sm w-100 rounded-pill" disabled>
+                                            <i class="bi bi-check-all me-1"></i> Selesai
+                                         </button>`
+                                    }
+                                    <button class="btn btn-outline-danger btn-sm rounded-circle btn-delete" data-index="${realIndex}">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    orderListContainer.appendChild(col);
+                });
+
+                // Event Klik Tandai Selesai -> Buka Modal Metode Pembayaran
+                document.querySelectorAll('.btn-complete').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        selectedOrderIndex = e.currentTarget.getAttribute('data-index');
+                        paymentMethodSelect.value = 'Tunai'; // Default pilihan
+                        paymentModal.show();
+                    });
+                });
+
+                // Event Hapus Pesanan
+                document.querySelectorAll('.btn-delete').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const confirmDelete = confirm('Apakah Anda yakin ingin menghapus pesanan ini?');
+                        if (confirmDelete) {
+                            const idx = e.currentTarget.getAttribute('data-index');
+                            const currentOrders = JSON.parse(localStorage.getItem('cafe_orders'));
+                            currentOrders.splice(idx, 1);
+                            localStorage.setItem('cafe_orders', JSON.stringify(currentOrders));
+                            loadOrders();
+                        }
+                    });
+                });
+            }
+
+            // Event Tombol Konfirmasi Pembayaran di Modal
+            confirmPaymentBtn.addEventListener('click', () => {
+                if (selectedOrderIndex !== null) {
+                    const currentOrders = JSON.parse(localStorage.getItem('cafe_orders'));
+                    currentOrders[selectedOrderIndex].status = 'Selesai';
+                    currentOrders[selectedOrderIndex].paymentMethod = paymentMethodSelect.value;
+                    
+                    localStorage.setItem('cafe_orders', JSON.stringify(currentOrders));
+                    paymentModal.hide();
+                    selectedOrderIndex = null;
+                    loadOrders();
+                }
+            });
+
+            // Hapus Semua Data Pesanan
+            clearAllBtn.addEventListener('click', () => {
+                if (confirm('Apakah Anda yakin ingin menghapus seluruh data pesanan?')) {
+                    localStorage.removeItem('cafe_orders');
+                    loadOrders();
+                }
+            });
+
+            loadOrders();
+            setInterval(loadOrders, 3000);
+        });
+    </script>
+</body>
+</html>
