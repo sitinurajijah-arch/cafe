@@ -103,7 +103,7 @@
                         role="tab" 
                         aria-controls="konten-minuman" 
                         aria-selected="false"
-                        style="--bs-nav-pills-link-active-bg: #7e210c;">                    
+                        style="--bs-nav-pills-link-active-bg: #7e210c;">                     
                         Minuman
                 </button>
             </li>
@@ -341,32 +341,63 @@
                 <i class="bi bi-trash"></i>
             </button>
             <button id="checkout-btn" class="btn text-white rounded-pill px-3 py-1" style="background-color: #7e210c;">
-                <i class="bi bi-whatsapp me-1"></i> Checkout WA
+                <i class="bi bi-bag-check me-1"></i> Lihat Pesanan
             </button>
         </div>
     </div>
 
-    <!-- Modal Tinjauan Pesanan (Pop-up Rincian Pesanan) -->
+    <!-- Modal Tinjauan Pesanan (Pop-up Rincian Pesanan & Form Validasi) -->
     <div class="modal fade" id="cartModal" tabindex="-1" aria-labelledby="cartModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content rounded-4 border-0 shadow">
                 <div class="modal-header border-bottom-0">
                     <h5 class="modal-title fw-bold" style="color: #7e210c;" id="cartModalLabel"><i class="bi bi-receipt me-2"></i>Rincian Pesanan Anda</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
+                    <h6 class="fw-bold mb-3">Item Yang Dipilih:</h6>
                     <ul id="modal-cart-list" class="list-group list-group-flush mb-3">
-                        <!-- Daftar menu yang baru saja dipilih akan muncul di sini secara otomatis -->
+                        <!-- Item yang dipesan dimuat dinamis di sini -->
                     </ul>
-                    <div class="d-flex justify-content-between align-items-center fw-bold fs-5 pt-2 border-top">
+                    <div class="d-flex justify-content-between align-items-center fw-bold fs-5 pt-2 border-top mb-4">
                         <span>Total Keseluruhan:</span>
                         <span id="modal-cart-total" style="color: #7e210c;">Rp 0</span>
                     </div>
+
+                    <!-- Form Identitas & Opsi Tempat -->
+                    <form id="orderForm" class="needs-validation" novalidate>
+                        <h6 class="fw-bold mb-3">Data Pemesan:</h6>
+                        <div class="mb-3">
+                            <label for="customerName" class="form-label fw-semibold">Nama Pemesan <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="customerName" placeholder="Masukkan nama Anda" required>
+                            <div class="invalid-feedback">Nama pemesan wajib diisi!</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Jenis Pesanan <span class="text-danger">*</span></label>
+                            <div class="d-flex gap-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="orderType" id="typeDineIn" value="Dine-in" checked>
+                                    <label class="form-check-label" for="typeDineIn">Makan di Tempat</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="orderType" id="typeTakeaway" value="Takeaway">
+                                    <label class="form-check-label" for="typeTakeaway">Bawa Pulang</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3" id="tableNoContainer">
+                            <label for="tableNumber" class="form-label fw-semibold">Nomor Meja (1 - 20) <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="tableNumber" min="1" max="20" placeholder="Pilih nomor meja (1-20)" required>
+                            <div class="invalid-feedback">Isi nomor meja antara 1 sampai 20!</div>
+                        </div>
+                    </form>
                 </div>
                 <div class="modal-footer border-top-0">
                     <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Tutup / Ubah</button>
                     <button type="button" id="confirm-checkout-btn" class="btn text-white rounded-pill px-4" style="background-color: #7e210c;">
-                        <i class="bi bi-whatsapp me-1"></i> Lanjut ke WhatsApp
+                        <i class="bi bi-send me-1"></i> Kirim Pesanan Ke Kasir
                     </button>
                 </div>
             </div>
@@ -396,124 +427,213 @@
                         <li class="nav-item"><a class="nav-link link-dua" href=""><i class="bi bi-tiktok me-2"></i>Tiktok</a></li>
                     </ul>
                 </div>
-           <div style="border-bottom: solid white 1px;" class="mt-3"></div>
+            <div style="border-bottom: solid white 1px;" class="mt-3"></div>
                 <small class="mt-3 text-white-50"> &copy; 2026 Moodboard Coffee. Semua hak cipta Dilindungi.</small>
             </div>
         </div>
     </footer>
 
-
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
         crossorigin="anonymous"></script>
 
+    <!-- SCRIPT JAVASCRIPT SISTEM PEMESANAN PELANGGAN -->
     <script>
-        const phoneNumber = "6289602804485";
         let cart = [];
-        
-        document.querySelectorAll('.btn-wa').forEach(button => {
-            button.addEventListener('click', function(e) {
-                e.preventDefault();
-                const itemName = this.getAttribute('data-name');
-                const itemPrice = parseInt(this.getAttribute('data-price'));
 
-                let existingItem = cart.find(item => item.name === itemName);
-                if (existingItem) {
-                    existingItem.qty += 1;
+        document.addEventListener('DOMContentLoaded', () => {
+            const btnAddCart = document.querySelectorAll('.btn-wa');
+            const cartFloat = document.getElementById('cart-float');
+            const cartCount = document.getElementById('cart-count');
+            const cartTotal = document.getElementById('cart-total');
+            const modalCartList = document.getElementById('modal-cart-list');
+            const modalCartTotal = document.getElementById('modal-cart-total');
+            const resetBtn = document.getElementById('reset-btn');
+            const checkoutBtn = document.getElementById('checkout-btn');
+            const confirmBtn = document.getElementById('confirm-checkout-btn');
+            const cartModal = new bootstrap.Modal(document.getElementById('cartModal'));
+            
+            const typeDineIn = document.getElementById('typeDineIn');
+            const typeTakeaway = document.getElementById('typeTakeaway');
+            const tableNoContainer = document.getElementById('tableNoContainer');
+            const tableNumber = document.getElementById('tableNumber');
+            const customerName = document.getElementById('customerName');
+
+            // 1. Tambah Pesanan ke Keranjang
+            btnAddCart.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const name = btn.getAttribute('data-name');
+                    const price = parseInt(btn.getAttribute('data-price'));
+
+                    const existingItem = cart.find(item => item.name === name);
+                    if (existingItem) {
+                        existingItem.qty += 1;
+                    } else {
+                        cart.push({ name, price, qty: 1 });
+                    }
+                    updateCartUI();
+                });
+            });
+
+            // 2. Tampilan UI Floating Keranjang
+            function updateCartUI() {
+                const totalItems = cart.reduce((sum, item) => sum + item.qty, 0);
+                const totalPrice = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+
+                if (totalItems > 0) {
+                    cartFloat.classList.remove('d-none');
+                    cartFloat.classList.add('d-flex');
                 } else {
-                    cart.push({ name: itemName, price: itemPrice, qty: 1 });
+                    cartFloat.classList.remove('d-flex');
+                    cartFloat.classList.add('d-none');
                 }
 
-                updateCartUI();
-            });
-        });
-
-        function updateCartUI() {
-            let cartFloat = document.getElementById('cart-float');
-            let cartCount = document.getElementById('cart-count');
-            let cartTotal = document.getElementById('cart-total');
-
-            let totalQty = cart.reduce((sum, item) => sum + item.qty, 0);
-            let totalPrice = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
-
-            if (totalQty > 0) {
-                cartFloat.classList.remove('d-none');
-                cartFloat.classList.add('d-flex');
-                cartCount.innerText = `${totalQty} item`;
-                cartTotal.innerText = `Rp ${totalPrice.toLocaleString('id-ID')}`;
-            } else {
-                cartFloat.classList.add('d-none');
-                cartFloat.classList.remove('d-flex');
+                cartCount.textContent = `${totalItems} item`;
+                cartTotal.textContent = `Rp ${totalPrice.toLocaleString('id-ID')}`;
             }
-        }
 
-        document.getElementById('reset-btn').addEventListener('click', function() {
-            if (confirm("Apakah Anda ingin mengosongkan keranjang pesanan?")) {
+            // 3. Render Daftar Keranjang di Modal (Bisa Hapus Satu per Satu)
+            function renderModalCart() {
+                modalCartList.innerHTML = '';
+                let totalPrice = 0;
+
+                cart.forEach((item, index) => {
+                    const itemTotal = item.price * item.qty;
+                    totalPrice += itemTotal;
+
+                    const li = document.createElement('li');
+                    li.className = 'list-group-item d-flex justify-content-between align-items-center px-0 py-2';
+                    li.innerHTML = `
+                        <div>
+                            <span class="fw-bold">${item.name}</span>
+                            <div class="text-muted small">Rp ${item.price.toLocaleString('id-ID')} x ${item.qty}</div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="fw-bold me-2">Rp ${itemTotal.toLocaleString('id-ID')}</span>
+                            <button class="btn btn-sm btn-outline-secondary btn-decrease" data-index="${index}">-</button>
+                            <button class="btn btn-sm btn-outline-secondary btn-increase" data-index="${index}">+</button>
+                            <button class="btn btn-sm btn-danger btn-remove" data-index="${index}"><i class="bi bi-trash"></i></button>
+                        </div>
+                    `;
+                    modalCartList.appendChild(li);
+                });
+
+                modalCartTotal.textContent = `Rp ${totalPrice.toLocaleString('id-ID')}`;
+
+                // Tombol Hapus / Kurang / Tambah per Item
+                document.querySelectorAll('.btn-remove').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const idx = e.currentTarget.getAttribute('data-index');
+                        cart.splice(idx, 1);
+                        updateCartUI();
+                        renderModalCart();
+                        if(cart.length === 0) cartModal.hide();
+                    });
+                });
+
+                document.querySelectorAll('.btn-decrease').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const idx = e.currentTarget.getAttribute('data-index');
+                        if (cart[idx].qty > 1) {
+                            cart[idx].qty -= 1;
+                        } else {
+                            cart.splice(idx, 1);
+                        }
+                        updateCartUI();
+                        renderModalCart();
+                        if(cart.length === 0) cartModal.hide();
+                    });
+                });
+
+                document.querySelectorAll('.btn-increase').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const idx = e.currentTarget.getAttribute('data-index');
+                        cart[idx].qty += 1;
+                        updateCartUI();
+                        renderModalCart();
+                    });
+                });
+            }
+
+            // 4. Buka Modal Rincian
+            checkoutBtn.addEventListener('click', () => {
+                renderModalCart();
+                cartModal.show();
+            });
+
+            // 5. Reset Pesanan
+            resetBtn.addEventListener('click', () => {
                 cart = [];
                 updateCartUI();
-            }
-        });
-
-        document.getElementById('checkout-btn').addEventListener('click', function() {
-            let modalList = document.getElementById('modal-cart-list');
-            modalList.innerHTML = "";
-
-            cart.forEach(item => {
-                let subtotal = item.price * item.qty;
-                let li = document.createElement('li');
-                li.className = "list-group-item d-flex justify-content-between align-items-center px-0";
-                li.innerHTML = `
-                    <div>
-                        <h6 class="mb-0 fw-bold">${item.name}</h6>
-                        <small class="text-muted">${item.qty}x  Rp ${item.price.toLocaleString('id-ID')}</small>
-                    </div>
-                    <span class="fw-bold">Rp ${subtotal.toLocaleString('id-ID')}</span>
-                `;
-                modalList.appendChild(li);
             });
 
-            let totalPrice = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
-            document.getElementById('modal-cart-total').innerText = `Rp ${totalPrice.toLocaleString('id-ID')}`;
+            // 6. Toggle Opsi Dine-in / Takeaway
+            typeDineIn.addEventListener('change', () => {
+                tableNoContainer.style.display = 'block';
+                tableNumber.setAttribute('required', 'required');
+            });
 
-            let cartModal = new bootstrap.Modal(document.getElementById('cartModal'));
-            cartModal.show();
-        });
+            typeTakeaway.addEventListener('change', () => {
+                tableNoContainer.style.display = 'none';
+                tableNumber.removeAttribute('required');
+                tableNumber.value = '';
+                tableNumber.classList.remove('is-invalid');
+            });
 
-        document.getElementById('confirm-checkout-btn').addEventListener('click', function() {
-            let modalElement = document.getElementById('cartModal');
-            let modalInstance = bootstrap.Modal.getInstance(modalElement);
-            modalInstance.hide();
+            // 7. Simpan Pesanan & Validasi Form
+            confirmBtn.addEventListener('click', () => {
+                const nameVal = customerName.value.trim();
+                const isDineIn = typeDineIn.checked;
+                const tableVal = parseInt(tableNumber.value);
 
-            let namaPemesan = prompt("Masukkan Nama Pemesan:");
-            if (namaPemesan === null) return;
-            namaPemesan = namaPemesan.trim() !== "" ? namaPemesan : "Tamu";
+                let isValid = true;
 
-            let tipePesan = prompt("Pilih tipe pesanan:\n1. Makan di Cafe \n2. Bawa Pulang \n\nKetik angka 1 atau 2;");
-            
-            if (tipePesan === null) return;
+                // Validasi Nama
+                if (!nameVal) {
+                    customerName.classList.add('is-invalid');
+                    isValid = false;
+                } else {
+                    customerName.classList.remove('is-invalid');
+                }
 
-            let keteranganTipe = "";
-            let infoMeja = "";
+                // Validasi Meja jika Dine-in
+                if (isDineIn) {
+                    if (isNaN(tableVal) || tableVal < 1 || tableVal > 20) {
+                        tableNumber.classList.add('is-invalid');
+                        isValid = false;
+                    } else {
+                        tableNumber.classList.remove('is-invalid');
+                    }
+                }
 
-            if (tipePesan === "1") {
-                keteranganTipe = "Makan di Cafe ";
-                let nomorMeja = prompt("Masukkan Nomor Meja Anda (Contoh: 5):");
-                if (nomorMeja === null) return;
-                infoMeja = nomorMeja.trim() !== "" ? `*Nomor Meja:* ${nomorMeja}` : "*Nomor Meja:* Tidak diisi";
-            } else if (tipePesan === "2") {
-                keteranganTipe = "Bawa Pulang ";
-                infoMeja = "*Nomor Meja:* - ";
-            } else {
-                alert("Pilihan tidak valid. Pesanan dibatalkan.");
-                return;
-            }
+                if (!isValid) return; // Hentikan kirim jika formulir tidak valid
 
-            let daftarMenuStr = cart.map(item => `- ${item.name} (${item.qty}x Rp ${item.price.toLocaleString('id-ID')})`).join('%0A');
-            let totalSemua = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+                // Buat Data Pesanan Baru
+                const newOrder = {
+                    id: 'ORD-' + Date.now().toString().slice(-4),
+                    time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
+                    customerName: nameVal,
+                    orderType: isDineIn ? 'Dine-in' : 'Takeaway',
+                    tableNumber: isDineIn ? tableVal : '-',
+                    items: [...cart],
+                    totalAmount: cart.reduce((sum, item) => sum + (item.price * item.qty), 0),
+                    status: 'Menunggu'
+                };
 
-            const message = `Halo Admin Moodboard Cafe, saya ingin memesan:%0A%0A*Atas Nama:* ${encodeURIComponent(namaPemesan)}%0A%0A${daftarMenuStr}%0A%0A*Total Pembayaran:* Rp ${totalSemua.toLocaleString('id-ID')}%0A*Tipe:* ${keteranganTipe}%0A${infoMeja}%0A%0AMohon info ketersediaannya. Terima kasih!`;
-            
-            window.open(`https://wa.me/${phoneNumber}?text=${message}`, '_blank');
+                // Simpan ke localStorage untuk Kasir
+                const existingOrders = JSON.parse(localStorage.getItem('cafe_orders')) || [];
+                existingOrders.push(newOrder);
+                localStorage.setItem('cafe_orders', JSON.stringify(existingOrders));
+
+                alert('Pesanan Anda berhasil dikirim ke Kasir/Pelayan! Silahkan tunggu.');
+                
+                // Reset State Keranjang & Modal
+                cart = [];
+                customerName.value = '';
+                tableNumber.value = '';
+                updateCartUI();
+                cartModal.hide();
+            });
         });
     </script>
 </body>
